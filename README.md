@@ -1,62 +1,260 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Backend Developer Assessment - Multi-Role Publishing API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based REST API for an internal publishing system that supports role-based access control for Admins, Editors, and Authors.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Token-based Authentication** using Laravel Sanctum
+- **Role-based Access Control** with three user roles:
+  - **Admin**: Full access to all features
+  - **Editor**: Can publish articles and manage content
+  - **Author**: Can create and edit their own articles
+- **Article Management** with draft and published states
+- **User Management** for admins
+- **Comprehensive API endpoints** with proper error handling
+- **Feature tests** for authentication functionality
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.1 or higher
+- Composer
+- SQLite (configured by default)
 
-## Learning Laravel
+## Installation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd publishing-api
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. **Install dependencies**
+   ```bash
+   composer install
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. **Environment setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-## Laravel Sponsors
+4. **Database setup**
+   ```bash
+   touch database/database.sqlite
+   php artisan migrate
+   php artisan db:seed
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5. **Start the development server**
+   ```bash
+   php artisan serve
+   ```
 
-### Premium Partners
+The API will be available at `http://localhost:8000`
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Authentication Flow
 
-## Contributing
+### 1. Register a new user
+```bash
+POST /api/register
+Content-Type: application/json
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "password_confirmation": "password123",
+    "role": "author"
+}
+```
 
-## Code of Conduct
+**Response:**
+```json
+{
+    "success": true,
+    "message": "User registered successfully",
+    "data": {
+        "user": {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john@example.com",
+            "role": "author"
+        },
+        "token": "1|abc123...",
+        "token_type": "Bearer"
+    }
+}
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 2. Login
+```bash
+POST /api/login
+Content-Type: application/json
 
-## Security Vulnerabilities
+{
+    "email": "john@example.com",
+    "password": "password123"
+}
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 3. Use the token for authenticated requests
+```bash
+Authorization: Bearer {token}
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/register` - Register a new user
+- `POST /api/login` - Login user
+- `POST /api/logout` - Logout user (requires authentication)
+
+### User Management
+- `GET /api/users` - Get all users (admin only)
+- `POST /api/users/{id}/assign-role` - Assign role to user (admin only)
+- `GET /api/profile` - Get current user profile
+
+### Articles
+- `GET /api/articles` - Get all published articles
+- `GET /api/articles/mine` - Get current user's articles (authors)
+- `POST /api/articles` - Create new article (authors)
+- `PUT /api/articles/{id}` - Update article (authors, own articles only)
+- `DELETE /api/articles/{id}` - Delete article (admin only)
+- `PATCH /api/articles/{id}/publish` - Publish article (editors and admins)
+
+## Role-based Permissions
+
+| Permission | Admin | Editor | Author |
+|------------|-------|--------|--------|
+| View all users | ✓ | ✗ | ✗ |
+| Assign roles | ✓ | ✗ | ✗ |
+| Create article | ✗ | ✗ | ✓ |
+| Edit own article | ✗ | ✗ | ✓ |
+| Publish article | ✓ | ✓ | ✗ |
+| Delete article | ✓ | ✗ | ✗ |
+| View published articles | ✓ | ✓ | ✓ |
+| View own articles | ✓ | ✓ | ✓ |
+
+## API Usage Examples
+
+### Create an Article
+```bash
+POST /api/articles
+Authorization: Bearer {author_token}
+Content-Type: application/json
+
+{
+    "title": "My First Article",
+    "content": "This is the content of my article..."
+}
+```
+
+### Publish an Article
+```bash
+PATCH /api/articles/1/publish
+Authorization: Bearer {editor_or_admin_token}
+```
+
+### Get User's Own Articles
+```bash
+GET /api/articles/mine
+Authorization: Bearer {author_token}
+```
+
+## Error Handling
+
+The API returns consistent error responses:
+
+```json
+{
+    "success": false,
+    "message": "Error description",
+    "errors": {
+        "field": ["Validation error message"]
+    }
+}
+```
+
+Common HTTP status codes:
+- `200` - Success
+- `201` - Created
+- `401` - Unauthenticated
+- `403` - Forbidden
+- `404` - Not Found
+- `422` - Validation Error
+- `500` - Server Error
+
+## Testing
+
+Run the feature tests:
+```bash
+php artisan test
+```
+
+Run specific test:
+```bash
+php artisan test --filter=AuthenticationTest
+```
+
+## Database Schema
+
+### Users Table
+- `id` - Primary key
+- `name` - User's full name
+- `email` - Unique email address
+- `password` - Hashed password
+- `role_id` - Foreign key to roles table
+- `timestamps`
+
+### Roles Table
+- `id` - Primary key
+- `name` - Role name (admin, editor, author)
+- `description` - Role description
+- `timestamps`
+
+### Articles Table
+- `id` - Primary key
+- `title` - Article title
+- `content` - Article content
+- `status` - Article status (draft, published)
+- `author_id` - Foreign key to users table
+- `published_at` - Publication timestamp
+- `timestamps`
+
+## Architecture
+
+The application follows Laravel best practices:
+
+- **Models**: User, Role, Article with proper relationships
+- **Controllers**: API controllers with proper separation of concerns
+- **Policies**: ArticlePolicy for authorization logic
+- **Gates**: Global permission gates for role-based access
+- **Middleware**: Laravel Sanctum for API authentication
+- **Validation**: Request validation with proper error responses
+- **Database**: SQLite for simplicity, easily configurable for other databases
+
+## Security Features
+
+- Password hashing using Laravel's built-in bcrypt
+- API token authentication with Laravel Sanctum
+- Role-based access control using Gates and Policies
+- Input validation and sanitization
+- CSRF protection (disabled for API routes)
+- Proper error handling without exposing sensitive information
+
+## Development Notes
+
+This project was developed following SOLID principles and clean code practices:
+
+- Single Responsibility: Each controller method has a single purpose
+- Open/Closed: Easily extensible for new roles or permissions
+- Dependency Inversion: Uses Laravel's service container
+- Clean separation of concerns between controllers, models, and policies
+- Comprehensive error handling and logging
+- Consistent API response format
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-"# BlockVarseTask" 
+This project is developed for assessment purposes.
+
