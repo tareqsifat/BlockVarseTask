@@ -61,7 +61,7 @@ Often, projects come with seeders to populate the database with initial data (e.
 php artisan db:seed
 ```
 
-This command runs the database seeders. If there are specific seeders you need to run, you might use a command like `php artisan db:seed --class=UserSeeder`.
+This command runs the database seeders. If there are specific seeders you need to run, you might use a command like `php artisan db:seed`.
 
 ## 7. Start the Development Server
 
